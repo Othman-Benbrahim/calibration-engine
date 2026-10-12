@@ -19,7 +19,7 @@ Un utilisateur qui **optimise son Brier score** peut le faire de plusieurs faço
 
 1. **Sélection des prédictions enregistrées** : logger seulement les prédictions dont on est assez confiant, oublier les autres.
 2. **Reformulation a posteriori** : ajuster la formulation de la prédiction après coup pour qu'elle soit "plus vraie".
-3. **Ancrage sur 0.5** : dire systématiquement 0.5 sur tout. Le Brier sera modeste (0.25) mais sans valeur.
+3. **Ancrage sur 0.5** : dire systématiquement 0.5 sur tout. Le Brier vaudra 0.25, sans aucune valeur ; et sur un échantillon déséquilibré, ce sera pire que d'annoncer le taux de base.
 4. **Horizon courts uniquement** : les prédictions à court terme sont plus faciles à calibrer. Éviter les horizons longs maintient un bon Brier apparent.
 5. **Domaines maîtrisés uniquement** : ne logger que les domaines où on est bon, ignorer les angles morts.
 
@@ -42,9 +42,9 @@ La promesse de la calibration n'a de valeur que si l'utilisateur l'honore.
 
 Tous les événements ne se prêtent pas à la calibration probabiliste. Le skill identifie et signale ces cas pour ne pas produire une fausse rigueur.
 
-### 2.1 Événements de classe unique (Black Swans)
+### 2.1 Événements sans classe de référence
 
-Les événements sans précédent statistique raisonnable ne peuvent être calibrés.
+Les événements sans précédent statistique raisonnable sont difficilement calibrables individuellement : leur probabilité peut être annoncée et scorée, mais une seule prédiction de ce type ne renseigne presque pas sur la calibration, et il n'existe pas de taux de base pour l'ancrer.
 
 - Exemple : probabilité d'un tremblement de terre de magnitude > 9.5 en Europe de l'Ouest cette année.
 - Exemple : probabilité qu'une IA superintelligente émerge avant 2030.
@@ -85,7 +85,7 @@ On ne peut calibrer que des faits observables, pas des états psychologiques ou 
 
 ### Ce que la calibration mesure
 
-La calibration mesure la **cohérence entre confiance et performance**. Un système parfaitement calibré et systématiquement médiocre est parfaitement calibré — il dit 0.5 tout le temps et c'est honnête.
+La calibration mesure la **cohérence entre confiance et performance**. Un système peut être parfaitement calibré et inutile : s'il annonce toujours le taux de base de la classe, ses probabilités sont justes en moyenne mais ne distinguent aucun cas d'un autre.
 
 Ce que la calibration ne mesure pas : *pourquoi* certaines prédictions sont bonnes et d'autres mauvaises. Elle identifie les patterns, mais l'amélioration vient d'un travail analytique (meilleure collecte OSINT, hypothèses plus rigoureuses, biais identifiés et corrigés).
 
@@ -130,7 +130,7 @@ L'enregistrement doit refléter la croyance réelle au moment de la prédiction,
 
 ### 5.2 Non-utilisation des scores à des fins de persuasion trompeuse
 
-Un Brier score de 0.17 peut impressionner un interlocuteur non-statisticien. Il ne doit pas être présenté comme "90% de taux de réussite" ou autre reformulation flatteuse. Le skill fournit le BSS et la comparaison au baseline pour contextualiser honnêtement.
+Un Brier score de 0.17 peut impressionner un interlocuteur non statisticien. Il ne doit pas être présenté comme « 90 % de taux de réussite » ou autre reformulation flatteuse. Le skill fournit les deux baselines (0.5 et taux de base) et les BSS correspondants pour contextualiser honnêtement.
 
 ### 5.3 Transparence sur les conditions
 
@@ -167,7 +167,7 @@ Le Calibration Engine est lui-même soumis aux limites qu'il impose aux autres s
 
 - Il ne peut évaluer que ce qui lui est soumis (biais de sélection possible).
 - Ses seuils de détection des biais (définis dans `detection-biais.md`) sont des conventions raisonnables, pas des vérités statistiques absolues.
-- Ses recommandations d'ajustement (ex : décote de 0.08 sur les prédictions Miroir) sont des estimations à réviser au fil du log.
+- Ses recommandations d'ajustement (ex : plafond de +0.10 sur les convergences Miroir, probabilité < 0.65 pour les dérivations Fractales seules) sont des conventions de prudence à réviser au fil du log.
 
 En d'autres termes : **le Calibration Engine lui-même doit être calibré**, par l'usage, par le retour d'expérience, et par la révision périodique de ses seuils et conventions.
 

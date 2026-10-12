@@ -1,6 +1,6 @@
 # Format du log externe — calibration-log.md
 
-Ce fichier définit la structure complète du fichier `calibration-log.md` que l'utilisateur maintient en dehors de Claude (mémoire externe). C'est le **seul moyen de capitaliser** entre sessions, Claude n'ayant pas de persistance interne.
+Ce fichier définit la structure complète du fichier `calibration-log.md` que l'utilisateur maintient lui-même. C'est la **référence auditable** entre sessions : même si l'environnement offre une mémoire, seul le log garantit un historique complet, daté et non modifiable a posteriori.
 
 ---
 
@@ -34,7 +34,7 @@ Ce fichier définit la structure complète du fichier `calibration-log.md` que l
 
 | ID | Date | Sujet | Proba | Horizon | Skill | Statut |
 |----|------|-------|-------|---------|-------|--------|
-| PRED-2026-05-14-001 | 2026-05-14 | Fusion X | 0.65 | 230j | signaux | ouverte |
+| PRED-2026-05-14-001 | 2026-05-14 | Fusion X | 0.65 | 231j | signaux | ouverte |
 | PRED-2026-04-02-001 | 2026-04-02 | Élection Y | 0.55 | 60j  | miroir  | résolue |
 ...
 
@@ -87,7 +87,7 @@ prediction: >
   X annoncera officiellement une cession majeure (>30% du capital) ou une fusion
   avec une autre cotée avant le 31 décembre 2026, vérifiable par un communiqué AMF.
 probabilite: 0.65
-horizon_jours: 230
+horizon_jours: 231
 date_echeance: 2026-12-31
 indicateur_bascule:
   - "Approche connue d'un fonds activiste (rendu public) avant septembre"
@@ -102,8 +102,9 @@ hypotheses_concurrentes:
   - label: "Scandale ou enquête bloquant l'opération"
     probabilite: 0.05
 base_rate_estimee: >
-  12% des entreprises du CAC40 ont connu cession/fusion sur horizon 24 mois,
-  2010-2024. Source : analyse manuelle rapports AMF.
+  [FICTIF — exemple de format] X % des entreprises du CAC40 ont connu
+  cession/fusion sur horizon 24 mois, AAAA-AAAA. Source : [à documenter].
+justification_extreme: null   # requis seulement si probabilite < 0.05 ou > 0.95
 biais_surveilles:
   - confirmation
   - narrative_attractor
@@ -112,9 +113,10 @@ sources:
   - "Les Échos 14/05/2026 — analyse sectorielle"
 confiance_metacognitive: moyenne
 comment_changer_avis: >
-  Si tous les indicateurs de bascule restent verts à fin octobre,
-  réviser la proba à 0.40. Si le board est stable et pas d'activiste,
-  réviser à 0.30.
+  Si aucun indicateur de bascule ne s'est déclenché à fin octobre,
+  réviser la proba vers 0.40. Si le board est stable et aucun activiste
+  ne s'est manifesté, réviser vers 0.30. (Révisions à calculer avec
+  bayesian-updater le moment venu.)
 statut: ouverte
 revisions: []
 ---
@@ -135,6 +137,7 @@ revisions:
       Démission confirmée du directeur financier le 12/07/2026.
       Indicateur de bascule 1 atteint — révision à la hausse.
     source: "Financial Times 12/07/2026"
+    methode: intuitive          # ou bayesienne_formelle (voir bayesian-updater)
   - date: 2026-09-01
     probabilite_avant: 0.75
     probabilite_apres: 0.80
@@ -142,7 +145,10 @@ revisions:
       Rumeurs de rachat par fonds P mentionnées par Reuters.
       Non confirmé — prudence maintenue.
     source: "Reuters 31/08/2026"
+    methode: intuitive
 ```
+
+Règle : une révision est toujours **antérieure** à la date de résolution de la prédiction. Les révisions marquées `methode: intuitive` peuvent être auditées a posteriori par `bayesian-updater` (Mode 3 ; l'exemple de ce mode porte sur les deux révisions ci-dessus).
 
 ---
 
@@ -174,12 +180,13 @@ outcome: 0   # Parti A obtenu 43.2% — prédiction non réalisée
 source_resolution: "Résultats officiels min. Intérieur 31/05/2026"
 brier_individuel: 0.3025   # (0.55 − 0)²
 log_loss_individuel: 0.799  # −log(1 − 0.55)
-verdict: "Prédiction non réalisée — proba > 0.5 mais outcome = 0"
+verdict: "Événement non réalisé ; probabilité annoncée 0.55 (score individuel, pas un diagnostic de calibration)"
 lecon: >
-  Le narrative attractor a joué : la convergence P1+P2 dans Miroir
-  a gonflé la confiance sans base factuelle supplémentaire.
-  Ajustement : pour les prédictions Miroir sur élections,
-  décote de 0.08 systématique.
+  Hypothèse de l'utilisateur : le narrative attractor a pu jouer (la
+  convergence P1+P2 dans Miroir a renforcé la confiance sans base factuelle
+  supplémentaire). Une prédiction isolée ne permet pas de le démontrer :
+  à vérifier sur l'ensemble des prédictions Miroir dans le prochain rapport
+  avant d'adopter une correction systématique.
 ---
 ```
 
@@ -211,7 +218,9 @@ Cette section est mise à jour par le skill lors du Mode 3 (rapport). Format :
 *Dernier calcul : 2026-08-15 — 41 prédictions résolues*
 
 ### Par skill source
-| Skill | N | Brier | Log Loss | BSS |
+*Données fictives d'illustration. BSS calculé contre le baseline « toujours 0.5 » (0.25) ; le rapport donne aussi le BSS contre le taux de base.*
+
+| Skill | N | Brier | Log Loss | BSS (vs 0.5) |
 |-------|---|-------|----------|-----|
 | signaux-du-futur | 22 | 0.162 | 0.491 | 0.35 |
 | miroir-trans-echelle | 12 | 0.198 | 0.547 | 0.21 |
@@ -221,21 +230,23 @@ Cette section est mise à jour par le skill lors du Mode 3 (rapport). Format :
 ### Par domaine
 | Domaine | N | Brier |
 |---------|---|-------|
-| géopolitique | 18 | 0.185 |
-| économie/entreprises | 15 | 0.155 |
+| géopolitique | 18 | 0.187 |
+| économie/entreprises | 15 | 0.150 |
 | social/culturel | 8  | 0.228 |
 
 ### Par horizon
 | Horizon | N | Brier |
 |---------|---|-------|
-| ≤ 90j | 19 | 0.140 |
-| 91-180j | 14 | 0.181 |
-| 181-365j | 8  | 0.224 |
+| ≤ 90j | 19 | 0.150 |
+| 91-180j | 14 | 0.190 |
+| 181-365j | 8  | 0.236 |
+
+*(Moyennes pondérées cohérentes entre ventilations : Brier global ≈ 0.181 dans les trois tableaux.)*
 
 ### Biais actifs détectés
-- **Sur-confiance** : active (bins 0.7-0.95 sous diagonale de > 0.12)
-- **Narrative attractor** : modéré (Δ Brier Miroir vs Signaux = +0.036)
-- **Dégradation 6m+** : active (Δ Brier horizon > 180j = +0.069)
+- **Sur-confiance** : active (bins [0.7, 0.8) à [0.9, 1.0] : fréquence observée inférieure de plus de 0.12 à la probabilité moyenne)
+- **Narrative attractor** : sous le seuil (Δ Brier Miroir vs Signaux = +0.036 < 0.05)
+- **Dégradation au-delà de 180 j** : à confirmer (Δ Brier vs ≤ 180 j = +0.069 ; n = 8 seulement)
 
 ### Calibration plot — 41 prédictions résolues
 [Copier depuis la sortie du rapport]

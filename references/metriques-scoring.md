@@ -1,6 +1,8 @@
 # Métriques de scoring — Brier, log loss, calibration plot
 
-Ce fichier expose les **métriques propres de la science prédictive** utilisées par le Calibration Engine pour scorer rétrospectivement les prédictions. Toutes les métriques décrites sont des *proper scoring rules* (Gneiting & Raftery, 2007) — c'est-à-dire qu'elles incitent l'honnêteté probabiliste (annoncer sa vraie probabilité produit le meilleur score attendu).
+Ce fichier expose les métriques utilisées par le Calibration Engine pour scorer rétrospectivement les prédictions. Toutes sont calculées par `scripts/scoring.py`.
+
+**Statut des métriques.** Seuls le **Brier score** et le **log loss** sont des *proper scoring rules* — plus précisément *strictly proper* : annoncer sa vraie probabilité minimise strictement la perte attendue (Gneiting & Raftery, 2007). Les autres éléments de ce fichier ne sont pas des règles de score : la **sharpness** est une propriété des prévisions (leur dispersion), l'**accuracy** une métrique de décision à seuil (non propre : elle ignore la valeur des probabilités), le **calibration plot** un diagnostic visuel, et la **décomposition de Murphy** une analyse du Brier.
 
 ---
 
@@ -8,7 +10,7 @@ Ce fichier expose les **métriques propres de la science prédictive** utilisée
 
 ### Définition
 
-Inventé par Glenn Brier en 1950 pour la météorologie, le Brier score est la **métrique de référence** de la prédiction probabiliste binaire.
+Proposé par Glenn Brier en 1950 pour la météorologie, le Brier score est la **métrique de référence** de la prédiction probabiliste binaire. (La formulation originale de Brier somme sur les deux catégories et varie de 0 à 2 ; la forme binaire ci-dessous, la plus courante, varie de 0 à 1.)
 
 Pour une prédiction unique :
 
@@ -31,10 +33,10 @@ BS = (1/N) × Σ (fᵢ − oᵢ)²
 | BS | Lecture |
 |----|---------|
 | 0 | Prédictions parfaites (proba 1 quand outcome=1, proba 0 quand outcome=0) |
-| 0.25 | Performance équivalente à toujours dire 0.5 (baseline sur événements équilibrés) |
-| 0.5 | Pire performance possible : dire 1 quand outcome=0, ou 0 quand outcome=1 |
+| 0.25 | Toujours dire 0.5 — **quel que soit** l'équilibre de l'échantillon, car (0.5 − o)² = 0.25 pour o = 0 comme pour o = 1 |
+| 1 | Pire performance possible : dire 1 quand outcome = 0, ou 0 quand outcome = 1 |
 
-**Règle pratique** : un système qui produit un BS < 0.25 sur un échantillon suffisant *bat le hasard*. C'est le minimum à viser.
+**Règle pratique** : un BS < 0.25 sur un échantillon suffisant bat le « toujours 0.5 ». C'est un minimum, pas une preuve de compétence : sur un échantillon déséquilibré, il faut battre le baseline du taux de base ō(1 − ō) (voir §7).
 
 ### Exemple
 
@@ -47,7 +49,7 @@ BS = (1/N) × Σ (fᵢ − oᵢ)²
 
 BS moyen = (0.04 + 0.64 + 0.04 + 0.25) / 4 = **0.2425**
 
-→ légèrement meilleur que le hasard, mais peu impressionnant (l'échantillon est trop petit pour conclure).
+→ légèrement meilleur que « toujours 0.5 », mais l'échantillon est beaucoup trop petit pour conclure quoi que ce soit.
 
 ---
 
@@ -65,7 +67,7 @@ Pour N prédictions :
 LL = − (1/N) × Σ [oᵢ × log(fᵢ) + (1−oᵢ) × log(1−fᵢ)]
 ```
 
-Log naturel (ln). Convention : `log(0) = +∞`, donc une prédiction de 0 ou 1 qui se trompe produit un score infini — d'où l'**interdiction** des probabilités extrêmes (0 et 1) à l'enregistrement.
+Logarithme naturel (ln), résultat en nats. Une prédiction de 0 ou 1 qui se trompe produit un score infini — d'où l'**interdiction** des valeurs 0 et 1 à l'enregistrement (plage admise : [0.01 ; 0.99]).
 
 ### Interprétation
 
@@ -79,9 +81,9 @@ Log naturel (ln). Convention : `log(0) = +∞`, donc une prédiction de 0 ou 1 q
 
 Le log loss **pénalise plus sévèrement** les prédictions confiantes et fausses. Une prédiction de 0.95 qui se révèle fausse :
 - Brier : (0.95 − 0)² = 0.9025
-- Log loss : −log(0.05) = 2.996
+- Log loss : −ln(0.05) = 2.996
 
-Le log loss est utilisé quand on veut **fortement décourager la sur-confiance**. C'est la métrique standard en machine learning et en pari sportif.
+Le log loss est utilisé quand on veut **fortement décourager la sur-confiance**. C'est une métrique courante en apprentissage automatique.
 
 ### Quand utiliser quel score
 
@@ -94,7 +96,7 @@ Le rapport de calibration affiche les deux.
 
 ## 3. Décomposition de Murphy (1973)
 
-Le Brier score se décompose en **trois composantes** instructives :
+Murphy (1973, *Journal of Applied Meteorology*, 12(4), 595-600) a montré que le Brier score se décompose en **trois composantes** instructives :
 
 ```
 BS = Reliability − Resolution + Uncertainty
@@ -110,7 +112,9 @@ Mesure à quel point les probabilités prédites correspondent aux fréquences o
 Reliability = (1/N) × Σₖ nₖ × (fₖ̄ − oₖ̄)²
 ```
 
-où l'on bin les prédictions par tranche de probabilité, `fₖ̄` étant la probabilité moyenne dans le bin k, `oₖ̄` la fréquence observée dans ce bin.
+où l'on regroupe les prédictions en groupes k, `fₖ̄` étant la probabilité moyenne du groupe k et `oₖ̄` la fréquence observée dans ce groupe.
+
+**Exactitude de l'identité.** BS = REL − RES + UNC est **exacte** quand les groupes correspondent aux valeurs de prévision distinctes. Avec des bins de largeur fixe (ex. 0.1), les prévisions d'un même bin diffèrent, et un terme résiduel intra-bin apparaît. `scripts/scoring.py` fournit les deux versions (`murphy_exact`, `murphy_bins`) et affiche le résidu.
 
 ### Resolution (discrimination)
 
@@ -132,7 +136,7 @@ Variance intrinsèque de l'événement, hors de contrôle du prédicteur.
 Uncertainty = ō × (1 − ō)
 ```
 
-Maximum 0.25 quand `ō = 0.5` (événement balanced).
+Maximum 0.25 quand `ō = 0.5`.
 
 ### Lecture combinée
 
@@ -140,7 +144,7 @@ Un bon système prédictif a :
 - Reliability **faible** (bien calibré)
 - Resolution **élevée** (discriminant)
 
-Un système peut être **bien calibré et inutile** (toujours dire 0.5 ≈ reliability 0, resolution 0, sans valeur). C'est pourquoi il faut les deux.
+Un système peut être **bien calibré et inutile** : dire systématiquement le taux de base ō donne reliability 0 et resolution 0. (Dire toujours 0.5 n'est bien calibré que si ō ≈ 0.5 : sa reliability vaut (0.5 − ō)².) C'est pourquoi il faut les deux.
 
 ---
 
@@ -149,7 +153,7 @@ Un système peut être **bien calibré et inutile** (toujours dire 0.5 ≈ relia
 ### Construction
 
 1. Trier toutes les prédictions par probabilité prédite.
-2. Diviser en **10 bins** : [0.0–0.1], [0.1–0.2], …, [0.9–1.0].
+2. Diviser en **10 bins de largeur 0.1** : [0.0 ; 0.1), [0.1 ; 0.2), …, [0.9 ; 1.0]. Le dernier bin inclut 1.0 ; chaque prédiction tombe dans exactement un bin.
 3. Pour chaque bin :
    - Calculer la probabilité moyenne prédite (`f̄`)
    - Calculer la fréquence observée d'occurrence (`ō`)
@@ -158,30 +162,30 @@ Un système peut être **bien calibré et inutile** (toujours dire 0.5 ≈ relia
 ### Lecture
 
 - **Diagonale parfaite** : calibration idéale.
-- **Courbe sous la diagonale** : sur-confiance (vous dites 0.8 mais ça arrive 0.6 fois).
-- **Courbe au-dessus de la diagonale** : sous-confiance (vous dites 0.4 mais ça arrive 0.6 fois).
+- **Sur-confiance** = prévisions **trop extrêmes** : la fréquence observée est plus proche de 0.5 que la probabilité annoncée. La courbe est **sous** la diagonale pour p > 0.5 (vous dites 0.8, ça arrive 0.6 fois) et **au-dessus** pour p < 0.5 (vous dites 0.2, ça arrive 0.35 fois). Elle est donc plus plate que la diagonale.
+- **Sous-confiance** = prévisions **pas assez tranchées** : la fréquence observée est plus loin de 0.5 que la probabilité annoncée (vous dites 0.8, ça arrive 0.95 fois ; vous dites 0.2, ça arrive 0.05 fois). Courbe plus pentue que la diagonale.
+- **Biais directionnel** : courbe entièrement au-dessus (vous sous-estimez systématiquement la fréquence des événements) ou entièrement en dessous (vous la surestimez).
 - **Cassures locales** : biais spécifiques à des plages de probabilité.
 
 ### Format textuel produit par le skill
 
+Le tableau est produit par `scripts/scoring.py report` (champ `calibration`). Lecture automatique : « cohérent » si |obs − p moy.| ≤ 0.10 ; « effectif trop faible » si n < 5 ; sinon sur-confiance ou sous-confiance selon le sens défini ci-dessus.
+
 ```
-Prob bin   | Obs freq | Cas    | Visualisation
-─────────────────────────────────────────────────────
-0.0-0.1    | 0.08     | n=4    | ▓░░░░░░░░░  bien calibré
-0.1-0.2    | 0.15     | n=6    | ▓▓░░░░░░░░  bien calibré
-0.2-0.3    | 0.32     | n=8    | ▓▓▓░░░░░░░  bien calibré
-0.3-0.4    | 0.38     | n=5    | ▓▓▓▓░░░░░░  bien calibré
-0.4-0.5    | 0.41     | n=3    | ▓▓▓▓░░░░░░  bien calibré
-0.5-0.6    | 0.56     | n=7    | ▓▓▓▓▓▓░░░░  bien calibré
-0.6-0.7    | 0.62     | n=9    | ▓▓▓▓▓▓░░░░  bien calibré
-0.7-0.8    | 0.61     | n=8    | ▓▓▓▓▓▓░░░░  ⚠ sur-confiance modérée
-0.8-0.9    | 0.66     | n=5    | ▓▓▓▓▓▓▓░░░  ⚠ sur-confiance forte
-0.9-0.95   | 0.75     | n=4    | ▓▓▓▓▓▓▓▓░░  ⚠ sur-confiance sévère
+Bin          | p moy. | obs.  | n | lecture
+[0.0, 0.1)   | 0.05   | 0.00  | 4 | effectif trop faible
+[0.1, 0.2)   | 0.15   | 0.20  | 5 | cohérent
+…
+[0.7, 0.8)   | 0.75   | 0.60  | 5 | sur-confiance (prévisions trop extrêmes)
+[0.8, 0.9)   | 0.85   | 0.75  | 4 | effectif trop faible
+[0.9, 1.0]   | 0.92   | 0.67  | 3 | effectif trop faible
 ```
+
+(Extrait du rapport d'exemple calculé sur `tests/fixtures/exemple-rapport.json`, données fictives.)
 
 ### Taille minimale d'échantillon
 
-Une calibration plot devient lisible à partir de **30-50 prédictions résolues**. En dessous, les bins sont trop peu peuplés pour conclure. Le rapport doit indiquer ce caveat explicitement.
+Un calibration plot devient lisible à partir de **30-50 prédictions résolues** (ordre de grandeur pratique, pas un seuil statistique). En dessous, les bins sont trop peu peuplés pour conclure. Le rapport doit indiquer ce caveat explicitement.
 
 ---
 
@@ -189,7 +193,7 @@ Une calibration plot devient lisible à partir de **30-50 prédictions résolues
 
 ### Définition
 
-La sharpness mesure la **distance moyenne des probabilités prédites à 0.5**. Un système "lâche" (toutes prédictions ≈ 0.5) a une sharpness nulle. Un système "tranché" (prédictions ≈ 0 ou 1) a une sharpness élevée.
+Pour des prévisions binaires, on mesure ici la sharpness par l'**écart quadratique moyen des probabilités prédites à 0.5** (une mesure simple parmi d'autres ; chez Gneiting et al., la sharpness désigne plus généralement la concentration des distributions prédictives). Un système "lâche" (toutes prédictions ≈ 0.5) a une sharpness nulle. Un système "tranché" (prédictions ≈ 0 ou 1) a une sharpness élevée.
 
 ```
 Sharpness = (1/N) × Σ (fᵢ − 0.5)²
@@ -197,11 +201,11 @@ Sharpness = (1/N) × Σ (fᵢ − 0.5)²
 
 ### Pourquoi ça compte
 
-Un système peut avoir un Brier faible **uniquement parce qu'il joue prudent** (dit toujours 0.5). C'est de la calibration triviale. La sharpness révèle si le système prend de vrais risques probabilistes.
+Un système qui « joue prudent » (probabilités toujours proches de 0.5 ou du taux de base) peut être bien calibré sans rien apporter. C'est de la calibration triviale. La sharpness révèle si le système prend de vrais risques probabilistes.
 
-La règle (Gneiting et al., 2007) :
+Le principe formulé par Gneiting, Balabdaoui & Raftery (2007, *Journal of the Royal Statistical Society B*, 69(2), 243-268) :
 
-> *Maximiser la sharpness, soumis à la contrainte de calibration.*
+> *Maximiser la sharpness des distributions prédictives, sous contrainte de calibration.*
 
 C'est-à-dire : être aussi tranché que possible, **sans** sacrifier la calibration.
 
@@ -211,20 +215,20 @@ C'est-à-dire : être aussi tranché que possible, **sans** sacrifier la calibra
 
 ### Définition
 
-Sur les prédictions où probabilité > 0.5, le taux d'exactitude est la fraction qui se réalisent.
+L'accuracy est la part des prédictions « du bon côté » de 0.5 :
 
 ```
-Accuracy = (TP + TN) / N
+Accuracy = (TP + TN) / N'
 ```
 
-où TP = vrai positifs (proba > 0.5 ET outcome = 1), TN = vrai négatifs (proba < 0.5 ET outcome = 0).
+où TP = vrais positifs (p > 0.5 ET outcome = 1), TN = vrais négatifs (p < 0.5 ET outcome = 0), et N' le nombre de prédictions avec p ≠ 0.5. Les prédictions à exactement 0.5 n'expriment aucun pari : elles sont exclues et leur nombre est affiché.
 
 ### Limites
 
 L'accuracy est une **métrique grossière** car elle ne tient pas compte de la probabilité :
 - Une prédiction à 0.51 et une à 0.99 comptent pareil si elles sont vraies.
 
-Le Brier et le log loss sont **strictement supérieurs**. L'accuracy est cependant utile pour communiquer un résultat à un public non-statisticien.
+L'accuracy n'est pas une règle de score propre : on peut l'améliorer en déclarant des probabilités plus tranchées que sa croyance réelle. Le Brier et le log loss sont donc à privilégier pour évaluer ; l'accuracy ne sert qu'à communiquer un résultat à un public non statisticien, toujours accompagnée du Brier.
 
 ---
 
@@ -234,7 +238,7 @@ Tout rapport doit comparer la performance à au moins **deux baselines** :
 
 ### Baseline 1 — Toujours dire le base rate
 
-Brier minimal qu'on obtient en disant systématiquement le base rate observé sur l'échantillon. C'est le baseline "sans aucune info supplémentaire".
+Brier obtenu en disant systématiquement le taux de base observé ō sur l'échantillon (référence dite « climatologique »). C'est le baseline « sans aucune information spécifique au cas ». Il vaut au plus 0.25 et est d'autant plus bas que l'échantillon est déséquilibré.
 
 ```
 BS_baseline = ō × (1 − ō)
@@ -258,7 +262,7 @@ BSS = 1 − (BS / BS_baseline)
 - BSS = 0 → équivalent au baseline
 - BSS < 0 → **pire que le baseline** (vous nuisez à l'information)
 
-C'est l'indicateur le plus parlant pour communiquer la valeur ajoutée du système.
+Le BSS n'est pas défini si ō vaut 0 ou 1 (baseline nul). Toujours préciser le baseline utilisé : « BSS vs 0.5 » et « BSS vs taux de base » diffèrent. C'est l'indicateur le plus parlant pour communiquer la valeur ajoutée du système.
 
 ---
 
@@ -270,31 +274,34 @@ Pour les prédictions qui ne sont pas binaires (ex : 4 scénarios avec leurs pro
 BS_multi = (1/N) × Σᵢ Σⱼ (fᵢⱼ − oᵢⱼ)²
 ```
 
-où `j` indexe les classes (scénarios), avec `Σⱼ fᵢⱼ = 1` et `oᵢⱼ ∈ {0, 1}` (le scénario réalisé prend 1, les autres 0).
+où `j` indexe les classes (scénarios), avec `Σⱼ fᵢⱼ = 1` et `oᵢⱼ ∈ {0, 1}` (le scénario réalisé prend 1, les autres 0). Ce score varie de 0 à **2** : il n'est pas directement comparable au Brier binaire (pour deux classes, il en vaut exactement le double).
 
-Le Calibration Engine accepte ce format pour les prédictions de *Signaux du Futur* qui produisent typiquement 3 scénarios (optimiste / probable / critique) avec probabilités.
+Le Calibration Engine accepte ce format pour les ensembles de scénarios MECE produits par `superforecasting-protocol` ou *Signaux du Futur* (`scripts/scoring.py multiclass`).
 
 ---
 
 ## 9. Tableau récapitulatif
 
-| Métrique | Plage | But | Quand l'utiliser |
-|----------|-------|-----|------------------|
-| Brier score | [0, 1] | Score général | Toujours |
-| Log loss | [0, +∞] | Pénaliser sur-confiance | Toujours en complément |
-| Reliability | [0, 0.25] | Calibration pure | Décomposition Brier |
-| Resolution | [0, 0.25] | Discrimination | Décomposition Brier |
-| Sharpness | [0, 0.25] | Audace probabiliste | Audit risque "trivialité" |
-| Calibration plot | — | Diagnostic visuel | Au moins 30 prédictions |
-| BSS | [-∞, 1] | Valeur vs baseline | Communication publique |
-| Accuracy | [0, 1] | Vulgarisation | Communication non-technique |
+| Métrique | Plage | Statut | But | Quand l'utiliser |
+|----------|-------|--------|-----|------------------|
+| Brier score (binaire) | [0, 1] | Règle de score strictement propre | Score général | Toujours |
+| Brier multi-classes | [0, 2] | Règle de score strictement propre | Scénarios MECE | Prédictions multi-classes |
+| Log loss | [0, +∞] | Règle de score strictement propre | Pénaliser la sur-confiance | Toujours en complément |
+| Reliability | [0, 1] | Composante du Brier | Calibration | Décomposition |
+| Resolution | [0, 0.25] | Composante du Brier | Discrimination | Décomposition |
+| Uncertainty | [0, 0.25] | Composante du Brier | Difficulté intrinsèque | Décomposition |
+| Sharpness (écart² à 0.5) | [0, 0.25] | Propriété des prévisions | Audace probabiliste | Audit du risque de « trivialité » |
+| Calibration plot | — | Diagnostic visuel | Calibration par plage | Au moins 30 prédictions |
+| BSS | ]−∞, 1] | Score relatif | Valeur vs baseline | Communication |
+| Accuracy | [0, 1] | Métrique de décision, non propre | Vulgarisation | Communication non technique |
 
 ---
 
 ## Notes pour l'agent
 
 - Toujours afficher Brier et log loss ensemble.
-- Toujours afficher le baseline 0.25 et le BSS pour situer la performance.
-- Au-delà de 30 prédictions résolues, produire le calibration plot.
+- Toujours afficher les deux baselines (0.25 et ō(1 − ō)) et les BSS correspondants.
+- Ne jamais calculer un agrégat de tête : `scripts/scoring.py report`.
+- À partir de 30 prédictions résolues, produire le calibration plot.
 - En dessous de 30, indiquer : *"Échantillon insuffisant pour une calibration robuste — interpréter avec prudence."*
 - En dessous de 10, ne produire qu'un score brut + warning fort.

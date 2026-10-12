@@ -11,7 +11,7 @@ Sans discipline d'enregistrement, le log devient un ramassis d'affirmations vagu
 Le protocole impose donc trois exigences non-négociables, et c'est leur stricte application qui fait la valeur du log :
 
 1. **Falsifiabilité préalable** — l'événement prédit doit être *observable* à l'horizon fixé.
-2. **Probabilité explicite** — entre 0.05 et 0.95 (pas de certitude).
+2. **Probabilité explicite** — dans [0.01 ; 0.99] (pas de certitude) ; hors de [0.05 ; 0.95], justification obligatoire.
 3. **Indicateur de bascule** — au moins un événement intermédiaire vérifiable.
 
 Une affirmation qui ne remplit pas ces trois conditions **n'est pas enregistrable**. Le skill demande reformulation ou refuse.
@@ -30,8 +30,10 @@ Chaque entrée de prédiction porte les champs suivants :
 | `domaine` | string | géopolitique / économie / social / technologique / personnel / autre |
 | `sujet` | string | Désignation courte (5-10 mots) du dossier |
 | `prediction` | string | L'énoncé prédictif complet, **falsifiable** |
-| `probabilite` | float [0.05–0.95] | Probabilité explicite de réalisation |
-| `horizon_jours` | integer | Délai maximal en jours après lequel l'entrée passe à `expirée` |
+| `probabilite` | float [0.01–0.99] | Probabilité explicite de réalisation |
+| `justification_extreme` | string | **Obligatoire si** `probabilite` < 0.05 ou > 0.95 : taux de base et raisons de cette quasi-certitude |
+| `horizon_jours` | integer | Délai en jours entre l'enregistrement et l'échéance |
+| `date_echeance` | date ISO | Date à laquelle la prédiction est résolue (ou passe à `expirée` faute de résolution claire) |
 | `indicateur_bascule` | list | Au moins un événement intermédiaire observable |
 | `condition_refutation` | string | Énoncé clair de ce qui invaliderait la prédiction |
 | `statut` | enum | ouverte / résolue / expirée / non-évaluable |
@@ -53,7 +55,7 @@ Chaque entrée de prédiction porte les champs suivants :
 
 ## Règles de falsifiabilité
 
-Une prédiction est **enregistrable** si et seulement si elle satisfait les **trois conditions de Popper opérationnelles** :
+Une prédiction est **enregistrable** si et seulement si elle satisfait les **trois conditions opérationnelles** ci-dessous. Elles s'inspirent du critère de falsifiabilité de Popper (un énoncé scientifique doit pouvoir être réfuté par l'observation) ; leur formulation en trois critères est propre à ce skill.
 
 ### Condition 1 — Événement observable
 
@@ -63,7 +65,7 @@ L'énoncé doit décrire un événement vérifiable par observation publique, pa
 ✅ *"X obtiendra plus de 51% des voix au scrutin du 14 juin 2026"*
 
 ❌ *"L'inflation reste préoccupante"* → non observable
-✅ *"L'inflation glissante annuelle sera > 4% à fin Q3 2026 selon l'INSEE"*
+✅ *"L'inflation en glissement annuel (IPC, INSEE) sera > 4 % sur l'indice de septembre 2026"*
 
 ### Condition 2 — Seuil quantitatif ou qualitatif net
 
@@ -93,29 +95,31 @@ Avant d'enregistrer, le skill applique mentalement le **test du sceptique** : un
 
 Si après reformulation l'utilisateur ne parvient pas à satisfaire le test, le skill propose deux options :
 - Marquer l'entrée comme **note prospective non-scorable** (utile pour mémoire, mais hors agrégats).
-- Abandonner l'enregistrement et noter dans une annexe `notes-non-falsifiables.md`.
+- Abandonner l'enregistrement et noter l'énoncé dans `notes-non-falsifiables.md` (gabarit fourni dans `references/notes-non-falsifiables.md`, à copier à côté du `calibration-log.md`).
 
 ---
 
 ## Règles de probabilité
 
-### Plage admise : 0.05 à 0.95
+### Plage admise : 0.01 à 0.99
 
-Les valeurs 0 et 1 sont **interdites**. Elles signifient "certitude", qui n'a pas sa place en prédiction.
+Les valeurs 0 et 1 sont **interdites** : elles signifient « certitude », et une erreur à 0 ou 1 produit un log loss infini.
 
-L'utilisateur qui dit *"je suis sûr à 100%"* est invité à reformuler à 0.95 et à indiquer dans un commentaire pourquoi cette quasi-certitude.
+Entre 0.01 et 0.05, et entre 0.95 et 0.99, la valeur est admise mais exige un champ `justification_extreme` : taux de base explicite et raisons spécifiques de la quasi-certitude. C'est la zone où la sur-confiance coûte le plus cher : une prédiction à 0.95 qui échoue coûte 0.9025 en Brier et 3.0 en log loss ; à 0.99, 0.98 en Brier et 4.6 en log loss.
 
-Au-delà de 0.95, un Brier individuel est si bas en cas d'échec qu'il distord la moyenne. Au-delà de 0.99, un échec produit un log loss astronomique. La discipline scientifique évite ces extrêmes.
+L'utilisateur qui dit *« je suis sûr à 100 % »* est invité à choisir une valeur dans la plage admise et à justifier la quasi-certitude.
+
+*Harmonisation v1.1* : la version 1.0 imposait [0.05 ; 0.95], ce qui rendait impossible l'enregistrement des probabilités basses légitimement produites par `superforecasting-protocol` (taux de base de quelques pour cent). La plage commune de l'écosystème est désormais [0.01 ; 0.99].
 
 ### Pas d'arrondi excessif
 
-Préférer `0.65` à `0.7` quand c'est ce que l'analyse suggère. La granularité informe sur l'effort de calibration.
+Préférer `0.65` à `0.7` quand c'est ce que l'analyse suggère. Dans les données du Good Judgment Project, arrondir les prévisions à des catégories plus grossières dégrade systématiquement leur précision (Friedman et al., 2018) : la granularité porte de l'information.
 
-À l'inverse, ne pas afficher une fausse précision : `0.642` est suspect si rien dans l'analyse ne justifie ce niveau. Préférer `0.65`.
+À l'inverse, une précision à la décimale près (`0.642`) n'apporte rien si rien dans l'analyse ne la justifie. Préférer `0.64` ou `0.65`.
 
 ### Tenir compte de la base rate
 
-Tetlock insiste : avant de probabiliser, demander *"à quelle fréquence ce type d'événement se produit-il historiquement ?"*. Cette **base rate** est l'ancrage naturel. La probabilité personnelle s'éloigne du base rate dans la mesure où on a des raisons spécifiques de penser que ce cas est différent.
+Tetlock insiste (commandement 3, équilibre vue intérieure / vue extérieure) : avant de probabiliser, demander *« à quelle fréquence ce type d'événement se produit-il historiquement ? »*. Ce **taux de base** est le point de départ naturel. La probabilité personnelle s'éloigne du base rate dans la mesure où on a des raisons spécifiques de penser que ce cas est différent.
 
 Un champ optionnel `base_rate_estimee` permet de tracer cet ancrage.
 
@@ -156,7 +160,8 @@ domaine: économie / entreprises
 sujet: "Restructuration entreprise X"
 prediction: "X annoncera officiellement une cession majeure (>30% du capital) ou une fusion avec une autre cotée du CAC40 avant le 31 décembre 2026, vérifiable par un communiqué AMF."
 probabilite: 0.65
-horizon_jours: 230
+horizon_jours: 231
+date_echeance: 2026-12-31
 indicateur_bascule:
   - "Approche connue d'un fonds activiste (rendu public) avant septembre"
   - "Démission ou révocation d'au moins un membre du board avant octobre"
@@ -166,7 +171,7 @@ hypotheses_concurrentes:
   - "Restructuration interne sans cession (P=0.20)"
   - "Aucune action majeure, statu quo (P=0.10)"
   - "Scandale ou enquête bloquant l'opération (P=0.05)"
-base_rate_estimee: "12% des entreprises du CAC40 ont connu une cession/fusion majeure sur un horizon de 24 mois entre 2010-2024"
+base_rate_estimee: "[FICTIF — exemple de format] X % des entreprises du CAC40 ont connu une cession/fusion majeure sur un horizon de 24 mois, période AAAA-AAAA, source : [à documenter]"
 biais_surveilles: [confirmation, narrative_attractor]
 sources:
   - "Reuters 12/05/2026 — démission CFO"
@@ -179,8 +184,9 @@ statut: ouverte
 - Seuil net (>30%, ou fusion CAC40).
 - Date limite précise.
 - Indicateurs de bascule précis et observables.
-- Hypothèses concurrentes formulées avec probabilités sommant à ~1.
-- Base rate explicite.
+- Hypothèses concurrentes formulées, probabilités sommant à 1.00 (0.65 + 0.20 + 0.10 + 0.05).
+- Taux de base explicite **et sourcé** (le chiffre doit venir d'une source vérifiable, pas d'une estimation de mémoire).
+- *Point de vigilance* : passer d'un taux de base de l'ordre de 10 % à 0.65 est un écart considérable ; il doit être justifié par des facteurs spécifiques explicites (voir `detection-biais.md` §4).
 
 ### Exemple B — Prédiction non enregistrable (à reformuler)
 
@@ -214,7 +220,7 @@ Procédure :
 3. Le skill enregistre, puis score, puis produit un mini-rapport.
 4. Au fil de séances répétées, l'utilisateur observe sa courbe de calibration s'améliorer.
 
-Effet documenté (Tetlock & Mellers, GJP) : 10-20% d'amélioration du Brier score après 3-6 séances d'entraînement bien menées.
+Effet documenté : dans le Good Judgment Project, un module d'entraînement au raisonnement probabiliste de moins d'une heure a amélioré le Brier de 6 à 11 % par rapport au groupe contrôle (Chang, Chen, Mellers & Tetlock, 2016). La pratique répétée avec retour d'information compte aussi, mais aucune étude citée ici ne chiffre l'effet d'un nombre donné de séances. (La version 1.0 annonçait « 10-20 % après 3-6 séances », formulation sans source.)
 
 ---
 
@@ -227,3 +233,11 @@ L'utilisateur peut soumettre une prédiction à enregistrer sous diverses formes
 - **Format pré-structuré** : YAML/markdown déjà formaté à corriger ou compléter
 
 Dans tous les cas, le skill produit l'entrée finale au format canonique défini ci-dessus.
+
+---
+
+## Références
+
+- Chang, W., Chen, E., Mellers, B., & Tetlock, P. (2016). Developing expert political judgment. *Judgment and Decision Making*, 11(5), 509-526.
+- Friedman, J. A., Baker, J. D., Mellers, B. A., Tetlock, P. E., & Zeckhauser, R. (2018). The value of precision in probability assessment: Evidence from a large-scale geopolitical forecasting tournament. *International Studies Quarterly*, 62(2), 410-422.
+- Popper, K. (1959). *The Logic of Scientific Discovery*. Hutchinson.

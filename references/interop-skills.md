@@ -2,6 +2,8 @@
 
 Ce fichier décrit comment le Calibration Engine se connecte aux autres skills de l'écosystème pour **extraire les prédictions loggables**, les enregistrer et les scorer ultérieurement.
 
+**Périmètre.** Les skills du cluster prédictif (`superforecasting-protocol`, `bayesian-updater`, `prediction-engine`) sont livrés avec celui-ci. *Signaux du Futur*, *Miroir Trans-échelle*, *Hacking Narratif*, *Fractales du Destin*, *Métalangage des Résonances* et *Miroir des Paradigmes* sont des skills **externes** de l'écosystème IRIS∞, non inclus dans ces dépôts : les règles ci-dessous s'appliquent à leurs sorties lorsqu'ils sont installés.
+
 ---
 
 ## Architecture générale
@@ -10,6 +12,7 @@ Le Calibration Engine est un **observateur**. Il ne perturbe pas les pipelines d
 
 ```
 ┌──────────────────────────┐     sortie      ┌─────────────────────────┐
+│  superforecasting-proto. │ ──────────────► │                         │
 │  signaux-du-futur        │ ──────────────► │                         │
 │  miroir-trans-echelle    │                 │   CALIBRATION ENGINE    │
 │  hacking-narratif        │ ──────────────► │   (observateur)         │
@@ -28,7 +31,17 @@ Deux modes d'activation :
 
 ---
 
-## Wrapping de `signaux-du-futur`
+## Wrapping de `superforecasting-protocol`
+
+La fiche de prédiction de `superforecasting-protocol` contient déjà un bloc « Métadonnées pour Calibration Engine » au format du log (identifiant `PRED-AAAA-MM-JJ-NNN`, échéance, domaine, statut). Procédure :
+
+1. Pour une question binaire : une entrée, `probabilite` = probabilité du « oui ».
+2. Pour un ensemble de scénarios MECE : une entrée `type: multi-classes` (format ci-dessous), scorée avec le Brier multi-classes.
+3. Reprendre les indicateurs précoces comme `indicateur_bascule` et les anti-indicateurs comme éléments de `condition_refutation`.
+
+---
+
+## Wrapping de `signaux-du-futur` *(externe)*
 
 ### Ce qui est directement loggable
 
@@ -79,7 +92,7 @@ Pour les prédictions multi-classes, les probabilités doivent sommer à 1.00 (�
 
 ---
 
-## Wrapping de `miroir-trans-echelle`
+## Wrapping de `miroir-trans-echelle` *(externe)*
 
 ### Ce qui est loggable et ce qui ne l'est pas
 
@@ -98,33 +111,34 @@ Pour les prédictions multi-classes, les probabilités doivent sommer à 1.00 (�
 
 ### Extraction des convergences fortes
 
-Quand la P3 identifie une convergence forte et en tire une recommandation (ex : *"verrouillé sur deux axes — hypothèse H2 prioritaire"*), le Calibration Engine peut logger :
+Quand la P3 identifie une convergence forte et en tire une recommandation (ex : *"verrouillé sur deux axes — hypothèse H1 prioritaire"*), le Calibration Engine peut logger :
 
 ```yaml
 id: PRED-2026-05-14-010
 skill_source: miroir-trans-echelle
-prediction: "H2 (cession) se réalisera avant 31/12/2026 — convergence P1+P2"
+prediction: "H1 (cession/fusion) se réalisera avant 31/12/2026 — convergence P1+P2"
 probabilite: 0.65   # ← L'utilisateur doit confirmer ce chiffre
-# NOTE : Le skill Miroir peut produire une conviction plus forte mais
-# la règle du narrative attractor (cap +0.10) est appliquée
+# NOTE : base OSINT (Signaux seul) = 0.55 ; la convergence P1+P2 ne peut
+# ajouter plus de +0.10 (règle du narrative attractor) → plafond 0.65
 indicateur_bascule: [...]
 metadata:
   biais_surveilles: [narrative_attractor]
-  note: "Proba ajustée à la baisse de +0.05 par rapport à l'intuition,
-         en application de la règle narrative attractor"
+  note: "Intuition initiale 0.70, ramenée à 0.65 (−0.05) en application
+         du plafond narrative attractor (base OSINT 0.55 + 0.10)"
 ```
 
 ### La règle du cap narrative attractor
 
 Toute prédiction issue de *Miroir Trans-échelle* qui bénéficie d'une "convergence forte" P1+P2 doit appliquer un **cap automatique** :
 
-- La convergence symbolique ne peut augmenter la probabilité OSINT de base de **plus de +0.10**.
+- La convergence symbolique ne peut augmenter la probabilité OSINT de base de **plus de +0.10**, quel que soit le niveau de départ.
 - Exemple : si Signaux seul aurait donné 0.55, Miroir peut aller à 0.65 au maximum.
-- Si l'intuition est d'aller plus haut, le champ `metadata.note` doit documenter la justification.
+- Si l'intuition est d'aller plus haut, le plafond s'applique quand même ; le champ `metadata.note` documente l'écart entre l'intuition et la valeur retenue.
+- Si la hausse passe par une mise à jour bayésienne, elle doit respecter BF ≤ 1.49 (voir `bayesian-updater/references/interop-skills.md` §2, où l'ancienne borne BF ≈ 1.5–2.0 a été corrigée car elle autorisait jusqu'à +0.16).
 
 ---
 
-## Wrapping de `hacking-narratif`
+## Wrapping de `hacking-narratif` *(externe)*
 
 *Hacking Narratif* produit rarement des prédictions probabilistes formelles. Il est concerné uniquement dans son **Mode B (stratégique)** quand il formule des prédictions sur des narratifs collectifs.
 
@@ -139,7 +153,7 @@ Même logique que Signaux. L'indicateur de bascule doit être observable dans la
 
 ---
 
-## Wrapping de `fractales-du-destin`
+## Wrapping de `fractales-du-destin` *(externe)*
 
 ### Le cas particulier du symbolique pur
 
@@ -163,7 +177,7 @@ probabilite: [à fixer par l'utilisateur après dépouillement symbolique]
 
 ### Règle d'humilité pour les prédictions dérivées de Fractales
 
-Les prédictions dérivées de Fractales *seules* (sans confirmation OSINT) doivent systématiquement porter une probabilité inférieure à 0.65 et noter dans les `biais_surveilles` : `narrative_attractor`.
+Les prédictions dérivées de Fractales *seules* (sans confirmation OSINT) portent une probabilité inférieure à 0.65 (convention de prudence du skill, à réviser au vu du log) et notent dans les `biais_surveilles` : `narrative_attractor`.
 
 Elles peuvent néanmoins être précieuses pour détecter si la lecture symbolique a une valeur prédictive résiduelle — une fois le log suffisamment riche, comparer Brier de "Fractales seul" vs "Signaux seul" vs "Miroir" est très instructif.
 
@@ -171,7 +185,7 @@ Elles peuvent néanmoins être précieuses pour détecter si la lecture symboliq
 
 ## Invocation formelle entre sessions
 
-Claude n'ayant pas de mémoire persistante, le Calibration Engine travaille toujours **sur les fichiers fournis en contexte**. Protocole recommandé en début de session :
+Le Calibration Engine travaille toujours **sur le `calibration-log.md` fourni en contexte**, qui fait foi même si l'environnement dispose d'une mémoire. Protocole recommandé en début de session :
 
 1. L'utilisateur fournit `calibration-log.md` en contexte.
 2. L'utilisateur indique le mode souhaité : enregistrement / scoring / rapport.
@@ -187,9 +201,11 @@ Pour les sessions où plusieurs skills sont utilisés conjointement, l'utilisate
 
 | Skill | Loggable directement | Via dérivation | Notes |
 |-------|---------------------|----------------|-------|
-| `signaux-du-futur` | ✅ Oui | — | Skill le mieux aligné |
-| `miroir-trans-echelle` | ✅ Hypothèses P2 | ✅ Convergences P3 | Règle narrative attractor à appliquer |
-| `hacking-narratif` | ✅ Mode B seulement | — | Mode A non loggable |
-| `fractales-du-destin` | ❌ Non | ✅ Dérivations | Humilité + biais notés |
-| `metalangage-resonances` | ❌ Non | Rarement | Non prédictif par nature |
-| `miroir-des-paradigmes` | ❌ Non | ❌ Non | Usage personnel, hors scope |
+| `superforecasting-protocol` | ✅ Oui | — | Fiche déjà au format du log |
+| `bayesian-updater` | Révisions uniquement | — | Champ `revisions` des entrées existantes |
+| `signaux-du-futur` *(externe)* | ✅ Oui | — | Skill amont le mieux aligné |
+| `miroir-trans-echelle` *(externe)* | ✅ Hypothèses P2 | ✅ Convergences P3 | Plafond narrative attractor (+0.10) |
+| `hacking-narratif` *(externe)* | ✅ Mode B seulement | — | Mode A non loggable |
+| `fractales-du-destin` *(externe)* | ❌ Non | ✅ Dérivations | Humilité + biais notés |
+| `metalangage-resonances` *(externe)* | ❌ Non | Rarement | Non prédictif par nature |
+| `miroir-des-paradigmes` *(externe)* | ❌ Non | ❌ Non | Usage personnel, hors périmètre |
