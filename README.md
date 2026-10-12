@@ -22,11 +22,11 @@ C'est le **chaînon manquant** qui distingue un système conceptuel élégant d'
 
 ## Pourquoi la calibration est centrale
 
-Philip Tetlock (*Expert Political Judgment*, 2005 ; *Superforecasting*, 2015) a montré sur deux décennies de recherche empirique :
+Les travaux de Philip Tetlock et de ses collègues (*Expert Political Judgment*, 2005 ; *Superforecasting*, 2015 ; Good Judgment Project, 2011-2015) établissent notamment :
 
-- Les experts sectoriels, sans calibration, ne battent pas significativement le hasard sur les prédictions politiques à 1-5 ans.
-- Les *superforecasters* — des amateurs disciplinés — battent les experts de **30%** en moyenne.
-- Le facteur clé de leur supériorité n'est pas le savoir sectoriel, c'est **la discipline de calibration** : enregistrer ses prédictions, les scorer, identifier ses biais, ajuster.
+- Les experts, en moyenne, font à peine mieux que des règles simples ou le hasard sur des prédictions politiques à horizon de plusieurs années.
+- Dans le tournoi IARPA, l'équipe Good Judgment a battu le groupe contrôle de plus de 50 % ; Good Judgment affirme aussi une précision supérieure de plus de 30 % à celle d'analystes du renseignement (chiffre institutionnel, méthode non publiée sur la page source).
+- La précision dépend d'aptitudes et de dispositions, mais aussi de pratiques entraînables : entraînement court (gain de 6 à 11 % sur le Brier ; Chang et al., 2016), travail en équipe, mises à jour fréquentes, et **retour d'information sur ses propres prédictions** — ce que fournit ce skill.
 
 Sans calibration documentée :
 - Vous ne pouvez pas dire si votre système est meilleur que rien.
@@ -67,14 +67,20 @@ Trois modes opérationnels :
 ```
 calibration-engine/
 │
-├── README.md                              ← Ce fichier
+├── README.md                              ← Ce fichier (page du dépôt, non chargé par l'agent)
 ├── SKILL.md                               ← Agent principal (3 modes)
 ├── LICENSE                                ← GPL-3.0
+├── scripts/
+│   └── scoring.py                         ← Brier, log loss, BSS, Murphy, bins (stdlib)
+├── tests/
+│   ├── test_scoring.py                    ← Vérification des valeurs citées
+│   └── fixtures/exemple-rapport.json      ← Log fictif du rapport d'exemple
 │
 └── references/
     ├── protocole-enregistrement.md        ← Format des prédictions loggées
     ├── metriques-scoring.md               ← Brier, log loss, calibration plot
-    ├── detection-biais.md                 ← 6 biais récurrents et leurs signatures
+    ├── detection-biais.md                 ← 6 familles de biais et leurs signatures
+    ├── notes-non-falsifiables.md          ← Gabarit pour les énoncés non scorables
     ├── fondements-scientifiques.md        ← Tetlock, Brier, Lichtenstein, Cooke
     ├── interop-skills.md                  ← Wrapping de Signaux, Miroir, etc.
     ├── format-log-externe.md              ← Structure du fichier calibration-log.md
@@ -88,12 +94,13 @@ calibration-engine/
 | Référence | Apport |
 |-----------|--------|
 | Brier, 1950 | Définition du score quadratique de prévision probabiliste |
-| Murphy & Winkler, 1977 | Décomposition Brier = Reliability − Resolution + Uncertainty |
-| Lichtenstein & Fischhoff, 1977 | Première mise en évidence systématique de la sur-confiance |
+| Murphy, 1973 | Décomposition Brier = Reliability − Resolution + Uncertainty |
+| Fischhoff, Slovic & Lichtenstein, 1977 ; Lichtenstein & Fischhoff, 1977 | Sur-confiance aux certitudes extrêmes ; effet difficile/facile |
 | Cooke, 1991 | Méthodologie d'élicitation d'experts calibrés |
-| Tetlock, 2005 / 2015 | Démonstration empirique que la calibration peut s'entraîner |
-| Mellers, Tetlock et al., 2014 | Good Judgment Project — protocoles de superforecasting |
-| Gneiting & Raftery, 2007 | Théorie unifiée des scoring rules propres (*proper scoring rules*) |
+| Tetlock, 2005 / 2015 | Évaluation empirique du jugement politique expert |
+| Mellers et al., 2014, 2015 ; Chang et al., 2016 | Good Judgment Project — effets de l'entraînement, des équipes, des dispositions |
+| Gneiting & Raftery, 2007 | Règles de score strictement propres (Brier, log loss) |
+| Gneiting, Balabdaoui & Raftery, 2007 | Calibration et sharpness |
 
 Détail dans `references/fondements-scientifiques.md`.
 
@@ -101,11 +108,13 @@ Détail dans `references/fondements-scientifiques.md`.
 
 ## Activation
 
-Le skill se déclenche automatiquement sur :
+Le déclenchement repose sur le champ `description` du `SKILL.md`, seul champ chargé à l'avance par les agents conformes à la spécification Agent Skills. Formulations typiques : « scorer cette prédiction », « bilan de calibration », « Brier », « biais de mes prédictions », « ai-je eu raison ».
 
-> "calibration", "scorer cette prédiction", "log de prédiction", "bilan de calibration", "rapport prédictif", "Brier score", "calibration plot", "biais de mes prédictions", "valider rétrospectivement"
+## Tests
 
-Ou en arrière-plan automatique : quand un autre skill produit une prédiction explicitement probabilisée et que l'environnement contient un fichier `calibration-log.md`.
+```bash
+python3 -m unittest discover -s tests -v
+```
 
 ---
 
@@ -115,13 +124,13 @@ Ou en arrière-plan automatique : quand un autre skill produit une prédiction e
 
 **Mode actif** : l'utilisateur invoque directement le skill pour scoring rétrospectif ou rapport.
 
-**Mode entraînement** : l'utilisateur peut soumettre une série de questions de calibration (questions à réponse vérifiable) pour s'entraîner et faire baisser son propre biais — voir `protocole-enregistrement.md` section "Entraînement".
+**Mode entraînement** : l'utilisateur peut soumettre une série de questions de calibration (questions à réponse vérifiable) pour s'entraîner — voir `references/protocole-enregistrement.md`, section « Mode entraînement ».
 
 ---
 
 ## Dépendances
 
-Le skill nécessite **un fichier `calibration-log.md` maintenu par l'utilisateur** (mémoire externe — Claude n'a pas de persistance entre sessions). Format détaillé dans `references/format-log-externe.md`.
+Le skill nécessite **un fichier `calibration-log.md` maintenu par l'utilisateur**, qui fait foi entre sessions. Les scores sont calculés par `scripts/scoring.py` (Python 3, bibliothèque standard). Format détaillé dans `references/format-log-externe.md`.
 
 Sans ce fichier, le skill fonctionne en *mode session* : il enregistre les prédictions de la session courante et produit un mini-rapport en fin, mais ne capitalise pas. Pour la valeur réelle (apprentissage long), maintenir le log externe est indispensable.
 
@@ -140,10 +149,13 @@ Sans ce fichier, le skill fonctionne en *mode session* : il enregistre les préd
 
 | Skill | Relation |
 |-------|----------|
-| `signaux-du-futur` | **Client principal** — toute hypothèse/scénario peut être loggué |
-| `miroir-trans-echelle` | **Client principal** — convergences, dissonances et synthèses sont loggables |
-| `fractales-du-destin` | Client indirect — seules les conséquences prédictives explicites sont loggables, pas les archétypes |
-| `hacking-narratif` | Client occasionnel — Mode B produit parfois des prédictions stratégiques |
+| `superforecasting-protocol` | **Client principal** — fiches de prédiction déjà au format du log |
+| `bayesian-updater` | Alimente le champ `revisions` ; audite les révisions passées |
+| `prediction-engine` | Orchestrateur qui route vers ce skill (Mode C) |
+| `signaux-du-futur` *(externe)* | Client principal — hypothèses et scénarios loggables |
+| `miroir-trans-echelle` *(externe)* | Hypothèses P2 et dérivations P3, sous plafond narrative attractor |
+| `fractales-du-destin` *(externe)* | Client indirect — seules les conséquences prédictives explicites sont loggables |
+| `hacking-narratif` *(externe)* | Client occasionnel — Mode B |
 
 ---
 
