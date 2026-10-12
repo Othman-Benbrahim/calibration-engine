@@ -1,1 +1,398 @@
-
+[
+ {
+  "id": "PRED-FICTIF-001",
+  "p": 0.05,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 45,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-002",
+  "p": 0.05,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 120,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-003",
+  "p": 0.05,
+  "outcome": 0,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 240,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-004",
+  "p": 0.05,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 60,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-005",
+  "p": 0.15,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 150,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-006",
+  "p": 0.15,
+  "outcome": 0,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 400,
+  "horizon": "> 365 j"
+ },
+ {
+  "id": "PRED-FICTIF-007",
+  "p": 0.15,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 30,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-008",
+  "p": 0.15,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "social/culturel",
+  "horizon_jours": 200,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-009",
+  "p": 0.15,
+  "outcome": 0,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 45,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-010",
+  "p": 0.25,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 120,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-011",
+  "p": 0.25,
+  "outcome": 1,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 240,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-012",
+  "p": 0.25,
+  "outcome": 0,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 60,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-013",
+  "p": 0.25,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 150,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-014",
+  "p": 0.25,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 400,
+  "horizon": "> 365 j"
+ },
+ {
+  "id": "PRED-FICTIF-015",
+  "p": 0.35,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 30,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-016",
+  "p": 0.35,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 200,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-017",
+  "p": 0.35,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 45,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-018",
+  "p": 0.35,
+  "outcome": 1,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 120,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-019",
+  "p": 0.45,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 240,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-020",
+  "p": 0.45,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 60,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-021",
+  "p": 0.45,
+  "outcome": 0,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 150,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-022",
+  "p": 0.55,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 400,
+  "horizon": "> 365 j"
+ },
+ {
+  "id": "PRED-FICTIF-023",
+  "p": 0.55,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 30,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-024",
+  "p": 0.55,
+  "outcome": 1,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 200,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-025",
+  "p": 0.55,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 45,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-026",
+  "p": 0.55,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 120,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-027",
+  "p": 0.65,
+  "outcome": 1,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 240,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-028",
+  "p": 0.65,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 60,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-029",
+  "p": 0.65,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "social/culturel",
+  "horizon_jours": 150,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-030",
+  "p": 0.65,
+  "outcome": 1,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 400,
+  "horizon": "> 365 j"
+ },
+ {
+  "id": "PRED-FICTIF-031",
+  "p": 0.65,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 30,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-032",
+  "p": 0.65,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 200,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-033",
+  "p": 0.75,
+  "outcome": 1,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 45,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-034",
+  "p": 0.75,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 120,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-035",
+  "p": 0.75,
+  "outcome": 1,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 240,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-036",
+  "p": 0.75,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 60,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-037",
+  "p": 0.75,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 150,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-038",
+  "p": 0.85,
+  "outcome": 1,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 400,
+  "horizon": "> 365 j"
+ },
+ {
+  "id": "PRED-FICTIF-039",
+  "p": 0.85,
+  "outcome": 1,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 30,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-040",
+  "p": 0.85,
+  "outcome": 0,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 200,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-041",
+  "p": 0.85,
+  "outcome": 1,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 45,
+  "horizon": "≤ 90 j"
+ },
+ {
+  "id": "PRED-FICTIF-042",
+  "p": 0.92,
+  "outcome": 1,
+  "skill_source": "hacking-narratif",
+  "domaine": "économie/entreprises",
+  "horizon_jours": 120,
+  "horizon": "91-180 j"
+ },
+ {
+  "id": "PRED-FICTIF-043",
+  "p": 0.92,
+  "outcome": 1,
+  "skill_source": "signaux-du-futur",
+  "domaine": "géopolitique",
+  "horizon_jours": 240,
+  "horizon": "181-365 j"
+ },
+ {
+  "id": "PRED-FICTIF-044",
+  "p": 0.92,
+  "outcome": 0,
+  "skill_source": "miroir-trans-echelle",
+  "domaine": "social/culturel",
+  "horizon_jours": 60,
+  "horizon": "≤ 90 j"
+ }
+]
